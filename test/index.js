@@ -243,8 +243,7 @@ describe('Metalsmith', function(){
     it('should read from a source directory', function(done){
       var m = new Metalsmith(fixture('read'));
       var stats = fs.statSync(fixture('read/src/index.md'));
-      m.read(function(err, files){
-        if (err) return done(err);
+      m.read().then(function(files) {
         assert.deepEqual(files, {
           'index.md': {
             title: 'A Title',
@@ -254,15 +253,14 @@ describe('Metalsmith', function(){
           }
         });
         done();
-      });
+      }).catch(done);
     });
 
     it('should read from a provided directory', function(done){
       var m = new Metalsmith(fixture('read-dir'));
       var stats = fs.statSync(fixture('read-dir/dir/index.md'));
       var dir = fixture('read-dir/dir');
-      m.read(dir, function(err, files){
-        if (err) return done(err);
+      m.read(dir).then(function(files){
         assert.deepEqual(files, {
           'index.md': {
             title: 'A Title',
@@ -272,14 +270,13 @@ describe('Metalsmith', function(){
           }
         });
         done();
-      });
+      }).catch(done);
     });
 
     it('should preserve an existing file mode', function(done){
       var m = new Metalsmith(fixture('read-mode'));
       var stats = fs.statSync(fixture('read-mode/src/bin'));
-      m.read(function(err, files){
-        if (err) return done(err);
+      m.read().then(function(files){
         assert.deepEqual(files, {
           'bin': {
             contents: new Buffer('echo test'),
@@ -288,44 +285,41 @@ describe('Metalsmith', function(){
           }
         });
         done();
-      });
+      }).catch(done);
     });
 
     it('should expose the stats property in each file metadata', function(done){
       var m = new Metalsmith(fixture('expose-stat'));
-      m.read(function(err, files) {
+      m.read().then(function(files) {
         var file = files['index.md'];
         assert(file.stats instanceof fs.Stats);
         done();
-      });
+      }).catch(done);
     });
 
     it('should not parse frontmatter if frontmatter is false', function(done){
       var m = new Metalsmith(fixture('read-frontmatter'));
       m.frontmatter(false);
-      m.read(function(err, files){
-        if (err) return done(err);
+      m.read().then(function(files){
         assert.equal(files['index.md'].thing, undefined);
         done();
-      });
+      }).catch(done);
     });
 
     it('should still read all when concurrency is set', function(done){
       var m = new Metalsmith('test/fixtures/concurrency');
       m.concurrency(3);
-      m.read(function(err, files){
-        if (err) return done(err);
+      m.read().then(function(files) {
         assert.equal(Object.keys(files).length, 10);
         done();
-      });
+      }).catch(done);
     });
 
     it('should ignore the files specified in ignores', function(done){
       var m = new Metalsmith('test/fixtures/basic');
       m.ignore('nested');
-      m.read(function(err, files){
-        if (err) return done(err);
-        stats = fs.statSync(path.join(__dirname, 'fixtures/basic/src/index.md'));
+      m.read().then(function(files){
+        var stats = fs.statSync(path.join(__dirname, 'fixtures/basic/src/index.md'));
         assert.deepEqual(files, {
           'index.md': {
             date: new Date('2013-12-02'),
@@ -336,30 +330,28 @@ describe('Metalsmith', function(){
           }
         });
         done();
-      });
+      }).catch(done);
     });
   });
 
   describe('#write', function(){
-    it('should write to a destination directory', function(done){
+    it('should write to a destination directory', function(done) {
       var m = new Metalsmith(fixture('write'));
       var files = { 'index.md': { contents: new Buffer('body') }};
-      m.write(files, function(err){
-        if (err) return done(err);
+      m.write(files).then(function() {
         equal(fixture('write/build'), fixture('write/expected'));
         done();
-      });
+      }).catch(done);
     });
 
     it('should write to a provided directory', function(done){
       var m = new Metalsmith(fixture('write-dir'));
       var files = { 'index.md': { contents: new Buffer('body') }};
       var dir = fixture('write-dir/out');
-      m.write(files, dir, function(err){
-        if (err) return done(err);
+      m.write(files, dir).then(function(){
         equal(fixture('write-dir/out'), fixture('write-dir/expected'));
         done();
-      });
+      }).catch(done);
     });
 
     xit('should chmod an optional mode from file metadata', function(done){
@@ -371,24 +363,22 @@ describe('Metalsmith', function(){
         }
       };
 
-      m.write(files, function(err){
+      m.write(files).then(function(){
         var stats = fs.statSync(fixture('write-mode/build/bin'));
         var mode = Mode(stats).toOctal();
         assert.equal(mode, '0777');
         done();
-      });
+      }).catch(done);
     });
 
     it('should still write all when concurrency is set', function(done){
       var m = new Metalsmith('test/fixtures/concurrency');
-      m.read(function(err, files){
-        if (err) return done(err);
-        m.write(files, function(err){
-          if (err) return done(err);
+      m.read().then(function(files){
+        m.write(files).then(function(){
           equal('test/fixtures/concurrency/build', 'test/fixtures/concurrency/expected');
           done();
-        });
-      });
+        }).catch(done);
+      }).catch(done);
     });
   });
 
@@ -396,11 +386,11 @@ describe('Metalsmith', function(){
     it('should apply a plugin', function(done){
       var m = new Metalsmith(testDirectory);
       m.use(plugin);
-      m.run({ one: 'one' }, function(err, files, metalsmith){
+      m.run({ one: 'one' }).then(function(files){
         assert.equal(files.one, 'one');
         assert.equal(files.two, 'two');
         done();
-      });
+      }).catch(done);
 
       function plugin(files, metalsmith, done){
         assert.equal(files.one, 'one');
@@ -413,11 +403,11 @@ describe('Metalsmith', function(){
 
     it('should run with a provided plugin', function(done){
       var m = new Metalsmith(testDirectory);
-      m.run({ one: 'one' }, [plugin], function(err, files, metalsmith){
+      m.run({ one: 'one' }, [plugin]).then(function(files){
         assert.equal(files.one, 'one');
         assert.equal(files.two, 'two');
         done();
-      });
+      }).catch(done);
 
       function plugin(files, metalsmith, done){
         assert.equal(files.one, 'one');
@@ -431,11 +421,11 @@ describe('Metalsmith', function(){
     it('should support synchronous plugins', function(done){
       var m = new Metalsmith(testDirectory);
       m.use(plugin);
-      m.run({ one: 'one' }, function(err, files, metalsmith){
+      m.run({ one: 'one' }).then(function(files){
         assert.equal(files.one, 'one');
         assert.equal(files.two, 'two');
         done();
-      });
+      }).catch(done);
 
       function plugin(files, metalsmith){
         assert.equal(files.one, 'one');
@@ -447,13 +437,11 @@ describe('Metalsmith', function(){
 
   xdescribe('#build', function(){
     it('should do a basic copy with no plugins', function(done){
-      new Metalsmith(fixture('basic'))
-        .build(function(err, files){
-          if (err) return done(err);
+      new Metalsmith(fixture('basic')).build().then(function(files){
           assert.equal(typeof files, 'object');
           equal(fixture('basic/build'), fixture('basic/expected'));
           done();
-        });
+        }).catch(done);
     });
 
     it('should preserve binary files', function(done){

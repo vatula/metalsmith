@@ -10,7 +10,7 @@ gulp.task('clear', function() {
 
 gulp.task('default', ['clear'], function() {
     return gulp.src('src/metalsmith.js')
-        .pipe(babel({stage: 1}))
+        .pipe(babel({stage: 1, optional: ['runtime']}))
         .pipe(rename({basename: 'index'}))
         .pipe(gulp.dest('lib'));
 });
